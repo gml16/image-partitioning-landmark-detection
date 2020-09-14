@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import nibabel as nib
+from scipy.ndimage import zoom
 
 def get_data(file_paths, landmark_paths, landmark_wanted, cache_path=None, separator = " "):
     with open(os.path.normpath(file_paths), 'r') as f:
@@ -14,7 +15,10 @@ def get_data(file_paths, landmark_paths, landmark_wanted, cache_path=None, separ
         img = nib.load(f).get_fdata()
         with open(os.path.normpath(landmark_paths[i]), 'r') as l:
             landmark = l.read().splitlines()
+        scale = [128/d for d in img.shape]
+        img = zoom(img, scale)
         landmark = np.array([float(x) for x in landmark[landmark_wanted].split(separator)])
+        landmark = [landmark[i] * scale[i] for i in range(len(landmark))]
         label = create_label_single_landmark(img, landmark)
         labels.append(label)
         img = np.expand_dims(img, 0)
@@ -56,10 +60,11 @@ def create_label_single_landmark(img, landmark):
     mask = np.stack([xp, xm, yp, ym, zp, zm])
     print("mask.shape", mask.shape)
     highest = np.argmax(mask, axis=0)
+    
     # unique, counts = np.unique(highest, return_counts=True)
     # print(dict(zip(unique, counts)))
 
-    label = onehot_initialization_v2(highest)
+    label = highest  # onehot_initialization_v2(highest)
     print("label.shape", label.shape)
 
     return label

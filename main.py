@@ -12,23 +12,28 @@ def main():
     cache_path = "cache"
     landmark_wanted = 0
     num_epochs = 100
-    log_freq = 100
+    log_freq = 1
 
     x, y = get_data(file_paths, landmark_paths, landmark_wanted, cache_path)
     print(f"Got {len(x)} images with {len(y)} landmarks")
     tensor_x, tensor_y = torch.Tensor(x), torch.Tensor(y)
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("device", device)
+
+    tensor_x = tensor_x.to(device)
+    tensor_y = tensor_y.to(device)
     print("x.shape", tensor_x.shape)
     print("y.shape", tensor_y.shape)
 
     dataset = TensorDataset(tensor_x,tensor_y)
     dataloader = DataLoader(dataset)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("device", device)
-
     unet = UNet(in_dim=1, out_dim=6, num_filters=4)
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(unet.parameters(), lr=0.001, momentum=0.9)
+    
+    unet.to(device)
 
     for epoch in range(num_epochs):
 
@@ -40,7 +45,9 @@ def main():
             optimizer.zero_grad()
 
             outputs = unet(inputs)
-            loss = criterion(outputs, labels)
+            print("outputs", outputs.shape)
+            print("labels", labels.shape)
+            loss = criterion(outputs, labels.long())
             loss.backward()
             optimizer.step()
 
