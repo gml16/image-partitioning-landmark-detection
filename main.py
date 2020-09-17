@@ -1,3 +1,6 @@
+import os
+import argparse
+
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
@@ -7,14 +10,26 @@ from data_reader import get_data
 from model import UNet
 
 def main():
-    file_paths = "data/files.txt"
-    landmark_paths = "data/landmarks.txt"
-    cache_path = "cache"
-    landmark_wanted = 0
-    num_epochs = 100
-    log_freq = 1
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file_paths',
+                        default="data/files.txt")
+    parser.add_argument('--landmark_paths',
+                        default="data/landmarks.txt")
+    parser.add_argument('--landmark', type=int, default=0)
+    parser.add_argument('--save_path')
+    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--log_freq', type=int, default=1000)
+    args = parser.parse_args()
 
-    x, y = get_data(file_paths, landmark_paths, landmark_wanted, cache_path)
+    file_paths = args.file_paths 
+    landmark_paths = args.landmark_paths
+    landmark_wanted = args.landmark
+    num_epochs = args.num_epochs
+    log_freq = args.log_freq
+    save_path = args.save_path
+
+    x, y = get_data(file_paths, landmark_paths, landmark_wanted)
     print(f"Got {len(x)} images with {len(y)} landmarks")
     tensor_x, tensor_y = torch.Tensor(x), torch.Tensor(y)
     
@@ -36,7 +51,7 @@ def main():
     unet.to(device)
 
     for epoch in range(num_epochs):
-
+        print("epoch", epoch)
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data
@@ -55,6 +70,8 @@ def main():
             if i % log_freq == log_freq-1:  
                 print('[%d, %5d] loss: %.3f' %
                     (epoch + 1, i + 1, running_loss / log_freq))
+                if save_path is not None:
+                  torch.save(unet.state_dict(), os.join(save_path, f"unet-{i}.pt"))
                 running_loss = 0.0
     
 
