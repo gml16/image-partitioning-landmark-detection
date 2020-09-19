@@ -40,7 +40,7 @@ def main():
     tensor_y = tensor_y.to(device)
 
     dataset = TensorDataset(tensor_x,tensor_y)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=1)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     unet = UNet(in_dim=1, out_dim=6, num_filters=4)
     criterion = torch.nn.CrossEntropyLoss()
@@ -49,7 +49,6 @@ def main():
     unet.to(device)
 
     for epoch in range(num_epochs):
-        print("epoch", epoch)
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data
@@ -61,12 +60,10 @@ def main():
             optimizer.step()
 
             running_loss += loss.item()
-            if i % log_freq == log_freq-1:  
-                print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / log_freq))
-                if save_path is not None:
-                  torch.save(unet.state_dict(), os.join(save_path, f"unet-{i}.pt"))
-                running_loss = 0.0
+        print(f"[{epoch+1}/{num_epochs}] loss: {running_loss}"
+        if epoch % log_freq == log_freq-1:  
+            if save_path is not None:
+                torch.save(unet.state_dict(), os.join(save_path, f"unet-{i}.pt"))
     
 
 if __name__ == "__main__":
