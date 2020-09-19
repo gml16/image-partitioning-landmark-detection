@@ -12,6 +12,7 @@ def get_data(file_paths, landmark_paths, landmark_wanted, cache_path=None, separ
     images = []
     labels = []
     for i, f in enumerate(file_paths):
+        print(f"{i+1}/{len(file_paths)} - {f}")
         img = nib.load(f).get_fdata()
         with open(os.path.normpath(landmark_paths[i]), 'r') as l:
             landmark = l.read().splitlines()
@@ -25,19 +26,15 @@ def get_data(file_paths, landmark_paths, landmark_wanted, cache_path=None, separ
         images.append(img)
     return images, labels
 
+# https://stackoverflow.com/questions/36960320/convert-a-2d-matrix-to-a-3d-one-hot-matrix-numpy
+def onehot_initialization(a):
+    ncols = 6
+    out = np.zeros((ncols, a.size), dtype=np.uint8)
+    out[a.ravel(), np.arange(a.size)] = 1
+    out.shape = (ncols,) + a.shape
+    return out
+
 def create_label_single_landmark(img, landmark):
-
-    def onehot_initialization_v2(a):
-        ncols = 6
-        out = np.zeros((ncols, a.size), dtype=np.uint8)
-        out[a.ravel(), np.arange(a.size)] = 1
-        out.shape = (ncols,) + a.shape
-        return out
-
-    print("landmark", landmark)
-
-    print("img shape", img.shape)
-
     xp = np.arange(img.shape[0], dtype=np.float32) - landmark[0]
     xp = np.stack((xp,) * img.shape[1], axis = 1)
     xp = np.stack((xp,) * img.shape[2], axis = 2)
@@ -58,14 +55,12 @@ def create_label_single_landmark(img, landmark):
     zm = np.negative(zp)
     
     mask = np.stack([xp, xm, yp, ym, zp, zm])
-    print("mask.shape", mask.shape)
     highest = np.argmax(mask, axis=0)
     
     # unique, counts = np.unique(highest, return_counts=True)
     # print(dict(zip(unique, counts)))
 
     label = highest  # onehot_initialization_v2(highest)
-    print("label.shape", label.shape)
 
     return label
 

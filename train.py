@@ -38,11 +38,9 @@ def main():
 
     tensor_x = tensor_x.to(device)
     tensor_y = tensor_y.to(device)
-    print("x.shape", tensor_x.shape)
-    print("y.shape", tensor_y.shape)
 
     dataset = TensorDataset(tensor_x,tensor_y)
-    dataloader = DataLoader(dataset)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=1)
 
     unet = UNet(in_dim=1, out_dim=6, num_filters=4)
     criterion = torch.nn.CrossEntropyLoss()
@@ -55,13 +53,9 @@ def main():
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data
-            print("inputs.shape", inputs.shape)
-            print("labels.shape", labels.shape)
             optimizer.zero_grad()
 
             outputs = unet(inputs)
-            print("outputs", outputs.shape)
-            print("labels", labels.shape)
             loss = criterion(outputs, labels.long())
             loss.backward()
             optimizer.step()
