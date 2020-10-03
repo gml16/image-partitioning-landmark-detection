@@ -3,6 +3,7 @@ import argparse
 import torch
 import numpy as np
 
+from model import UNet
 from data_reader import get_data
 from data_reader import onehot_initialization
 
@@ -35,8 +36,12 @@ def main():
     model_path = args.model_path
 
     # Fakin data
-    _, y = get_data("data/files.txt", "data/landmarks.txt", 0)
-    y = np.array(y)
+    x, _ = get_data(file_paths, None, 0)
+    
+    unet = UNet(in_dim=1, out_dim=6, num_filters=4)
+    unet.load_state_dict(torch.load(model_path))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    unet.to(device)
 
     # Dummy data
     # from data_reader import create_label_single_landmark
@@ -44,9 +49,14 @@ def main():
     # y = create_label_single_landmark(fake, [127, 127, 127])
     # y = np.expand_dims(y, axis=0)
 
-    tensor_y = torch.Tensor(y)
-    landmark = predict(tensor_y)
-    print("lanfmakr", landmark)
+
+    tensor_x = torch.Tensor(x).to(device)
+    for i, tx in enumerate(tensor_x):
+      tx = tx.unsqueeze(0)
+      y = unet(tx).cpu()
+      print("Y", y.shape)
+      landmark = predict(y)
+      print(f"landmark {i}", landmark)
 
 if __name__ == "__main__":
     main()
