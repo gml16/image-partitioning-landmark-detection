@@ -28,6 +28,7 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=int(1e9))
     parser.add_argument('--log_freq', type=int, default=100)
     parser.add_argument('--separator', default=",")
+    parser.add_argument('--batch_size', type=int, default=8)
     args = parser.parse_args()
 
     file_paths = args.file_paths 
@@ -39,16 +40,12 @@ def main():
 
     x, y = get_data(file_paths, landmark_paths, landmark_wanted, separator=args.separator)
     print(f"Got {len(x)} images with {len(y)} landmarks")
-    tensor_x, tensor_y = torch.Tensor(x), torch.Tensor(y)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("device", device)
 
-    tensor_x = tensor_x.to(device)
-    tensor_y = tensor_y.to(device)
-
-    dataset = TensorDataset(tensor_x,tensor_y)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y))
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     unet = UNet(in_dim=1, out_dim=6, num_filters=4)
     criterion = torch.nn.CrossEntropyLoss(weight=get_weigths(y))
@@ -58,7 +55,7 @@ def main():
 
     for epoch in range(num_epochs):
         running_loss = 0.0
-        for i, data in enumerate(dataloader, 0):
+        for i, data in enumerate(dataloader):
             inputs, labels = data
             optimizer.zero_grad()
 

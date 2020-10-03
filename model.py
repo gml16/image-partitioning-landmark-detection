@@ -31,6 +31,8 @@ def conv_block_2_3d(in_dim, out_dim, activation):
 class UNet(nn.Module):
     def __init__(self, in_dim, out_dim, num_filters):
         super(UNet, self).__init__()
+
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -68,6 +70,7 @@ class UNet(nn.Module):
         self.out = conv_block_3d(self.num_filters, out_dim, nn.Softmax(dim=1))
     
     def forward(self, x):
+        x = x.to(self.device)
         # Down sampling
         #print("x", x.shape)
         down_1 = self.down_1(x) # -> [1, 4, 128, 128, 128]

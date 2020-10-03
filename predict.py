@@ -40,10 +40,10 @@ def predict_using_model(file_paths, landmark_paths, landmark, separator, model_p
     print("Using as device", device)
     unet.to(device)
 
-    tensor_x = torch.Tensor(x).to(device)
+    tensor_x = torch.Tensor(x)
     for i, tx in enumerate(tensor_x):
         tx = tx.unsqueeze(0)
-        view_image(tx.cpu())
+        view_image(tx
         view_image(labels[i])
         out = unet(tx).cpu()
 
