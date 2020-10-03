@@ -4,8 +4,8 @@ import torch
 import numpy as np
 
 from model import UNet
-from data_reader import get_data
-from data_reader import onehot_initialization
+from data_reader import get_data, onehot_initialization, create_label_single_landmark
+from visualisation import view_image
 
 
 def predict(action_map):
@@ -24,39 +24,53 @@ def predict(action_map):
     pos = np.unravel_index(np.argmax(v, axis=None), v.shape)
     return pos
 
+def predict_true_label():
+    fake = np.zeros((128, 128, 128))
+    y = create_label_single_landmark(fake, [50, 60, 30])
+    y = np.expand_dims(y, axis=0)
+    view_image(y)
+
+
+def predict_using_model(file_paths, landmark, separator, model_path):
+    x, y = get_data(file_paths, None, landmark_wanted=landmark, separator=separator)
+    view_image(x)
+    print("input1")
+    input()
+    view_image(y)
+    print("input2")
+    input()
+    unet = UNet(in_dim=1, out_dim=6, num_filters=4)
+    unet.load_state_dict(torch.load(model_path))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Using as device", device)
+    unet.to(device)
+
+    tensor_x = torch.Tensor(x).to(device)
+    for i, tx in enumerate(tensor_x):
+        tx = tx.unsqueeze(0)
+        y = unet(tx).cpu()
+        print("Y", y.shape)
+        landmark = predict(y)
+        print(f"landmark {i}", landmark)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_paths',
                         default="data/files.txt")
     parser.add_argument('--model_path')
+    parser.add_argument('--separator', default=",")
+    parser.add_argument('--landmark', type=int, default=0)
     args = parser.parse_args()
 
-    file_paths = args.file_paths
-    model_path = args.model_path
-
-    # Fakin data
-    x, _ = get_data(file_paths, None, 0)
+    predict_using_model(args.file_paths, args.landmark, args.separator, args.model_path)
     
-    unet = UNet(in_dim=1, out_dim=6, num_filters=4)
-    unet.load_state_dict(torch.load(model_path))
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    unet.to(device)
-
-    # Dummy data
-    # from data_reader import create_label_single_landmark
-    # fake = np.zeros((128, 128, 128))
-    # y = create_label_single_landmark(fake, [127, 127, 127])
-    # y = np.expand_dims(y, axis=0)
+    
 
 
-    tensor_x = torch.Tensor(x).to(device)
-    for i, tx in enumerate(tensor_x):
-      tx = tx.unsqueeze(0)
-      y = unet(tx).cpu()
-      print("Y", y.shape)
-      landmark = predict(y)
-      print(f"landmark {i}", landmark)
+    
+
+
+
 
 if __name__ == "__main__":
     main()
