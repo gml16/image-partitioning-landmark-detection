@@ -34,11 +34,7 @@ def predict_true_label():
 def predict_using_model(file_paths, landmark, separator, model_path):
     x, y = get_data(file_paths, None, landmark_wanted=landmark, separator=separator)
     view_image(x)
-    print("input1")
-    input()
-    view_image(y)
-    print("input2")
-    input()
+
     unet = UNet(in_dim=1, out_dim=6, num_filters=4)
     unet.load_state_dict(torch.load(model_path))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -48,10 +44,15 @@ def predict_using_model(file_paths, landmark, separator, model_path):
     tensor_x = torch.Tensor(x).to(device)
     for i, tx in enumerate(tensor_x):
         tx = tx.unsqueeze(0)
+        view_image(tx.cpu())
         y = unet(tx).cpu()
-        print("Y", y.shape)
+
         landmark = predict(y)
         print(f"landmark {i}", landmark)
+
+        action_map = y.detach().numpy().squeeze()
+        action_map = np.argmax(action_map, axis=0)
+        view_image(action_map)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -62,15 +63,9 @@ def main():
     parser.add_argument('--landmark', type=int, default=0)
     args = parser.parse_args()
 
-    predict_using_model(args.file_paths, args.landmark, args.separator, args.model_path)
+    predict_true_label()
+    #predict_using_model(args.file_paths, args.landmark, args.separator, args.model_path)
     
-    
-
-
-    
-
-
-
 
 if __name__ == "__main__":
     main()

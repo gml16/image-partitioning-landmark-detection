@@ -15,8 +15,10 @@ def get_data(file_paths, landmark_paths, landmark_wanted, cache_path=None, separ
     for i, f in enumerate(file_paths):
         print(f"{i+1}/{len(file_paths)} - {f}")
         img = nib.load(f).get_fdata()
+        img = np.squeeze(img)
         scale = [128/d for d in img.shape]
         img = zoom(img, scale)
+        assert img.shape == (128, 128, 128)
         if landmark_paths is not None:
             with open(os.path.normpath(landmark_paths[i]), 'r') as l:
                 landmark = l.read().splitlines()
